@@ -1,5 +1,11 @@
 # React Micro-Frontends
 
+## Motivation
+Reduce complexity, ease development and integration. Encourage the use of different technologies with a minimal coupling to the other parts of the application.
+
+## Technical overview
+
+### How do custom elements actually work?
 The main idea is to use the [CustomElements API](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Custom_Elements) to achieve an optimal isolation of a component, providing the freedom to use whatever JS stack to implement a certain chunk of the whole application. Abstracted way of use:
 
 ```
@@ -44,4 +50,39 @@ class MyComponent extends React.Component {
     }
 
 }
+```
+
+### Loading of a script of a custom element
+
+The element's script should be loaded lazily from the wrapper element only if it wasn't loaded yet. For this purpose we need to create a general purpose wrapper:
+
+```
+type Props = {
+    src: string, // Script URL to load the custom element
+}
+
+class CustomElement extends React.Component<Props, State> {
+
+    onComponentDidMount() {
+        // check if this custom-element was already loaded
+        // if not load the script for it
+    }
+
+    render() {
+        <>{
+            this.props.children
+        }</> // mount the custom-element
+    }
+}
+```
+
+Usage:
+
+```
+<CustomElement src="/customelements/foo-component.js">
+    <foo-component 
+        bar={this.props.barToPass}
+        onclick={this.handleFooOnClick}>
+    </foo-component>
+</CustomElement>
 ```
