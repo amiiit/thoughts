@@ -27,4 +27,21 @@ CustomElementsRegistry is included in the [custom-elements polyfill](https://git
 </html>
 ```
 
-A custom element can receive props via attributes, similar to a React compoenent. Additionally it can expose API functions
+A custom element can receive props via attributes, similar to a React compoenent. Additionally it can expose API functions:
+
+```
+class MyComponent extends React.Component {
+
+    handleMakeFooLaugh(){
+        this.fooNode && this.fooNode.tickle()
+    }
+
+    render(){
+        <div>
+            <foo-component ref={node => this.fooNode = node}></foo-component>
+            <button onClick={this.handleMakeFooLaugh}>Make foo laugh</button>
+        </div>
+    }
+
+}
+```
