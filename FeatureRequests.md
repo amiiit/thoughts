@@ -36,7 +36,7 @@ Giving precise information including background will help the developer to come 
 When you are forced to sit down and formulate what is it that you need, you will start to use your imagination and construct the feature in your mind. This will give you a better picture of what you really need and most importantly, of what you don't need.
 
 ### Because a developer might send you back to write them, before she starts implementing
-This is not a beaurocracy nor an ego-game. This 
+This is not a beaurocracy nor an ego-game. This is your developers trying to do their work good. Beleive me you don't want to have a feature that was implemented by developers that didn't understand what they were working on. The world is full of bad software and that's usually due to lack of context. Remember? It's all about context.
 
 ## Inspiration and further reading
 This artice is inspired by Joel Spolky's series of articles about functional specifications. Please take some time and read it, as it's very nicely written and an easy read.
