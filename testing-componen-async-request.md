@@ -1,6 +1,6 @@
-# Unit-Testing asynchronous data fething on a React component
+# Unit-Testing asynchronous data fetching on a React component
 
-The following is quite a typical scenario in React component that get data over network request. Say we have the following component:
+The following is quite a typical scenario in React component: We mount a component with a property that serves an id for fetching some data over the network. We the make use of `componentDidMount` in order to fetch some data and set it to the state.
 
 ```
 import React from 'react';
@@ -29,7 +29,7 @@ class Weather extends React.Component {
 }
 ```
 
-Can you see why this is hard to test? This is because componentDidMount works asynchronously, what means that its executing will end before the network request terminates and we don't have any guarantee when or even if the `setState` function will get invoked.
+This is quite tricky to test. This is because `componentDidMount` does some asynchronous work, what means that `componentDidMount` will terminate before the network response reaches the component and we don't have any guarantee when or even if the `setState` function will get invoked. In our unit test, if we look too early into the state the data might not be there yet and our test will fail.
 
 ## The test case
 
