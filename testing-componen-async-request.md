@@ -1,6 +1,10 @@
 # Unit-Testing asynchronous data fetching on a React component
 
-The following is quite a typical scenario in React component: We mount a component with a property that serves an id for fetching some data over the network. We the make use of `componentDidMount` in order to fetch some data and set it to the state.
+The following article is a direct result of the code review process that we run internally in our team. I was implementing a new feature and I decided to fetch data directly from the component and not to go over the redux actions and store. We could have a really long discussion just about if we should be even fetching data directly from the component or would it be cleaner to dispatch a redux action and rely purely on props? Possibly that's true. But in my case I decided to go very simply and just fetch the data I need.
+
+On the pull request I got the feedback that if I used an Action it would be easier to test. Hmm... So I decided to test this scenario as is so that I'm able to write more of these tests in the future.
+
+Regardless to what we might be using for state management (or not), the following is quite a typical scenario in React component: We mount a component with a property that serves as in id. Then in `componentDidMount` we use that prop in order to fetch some data and set the component's state accordingly.
 
 ```
 import React from 'react';
@@ -8,7 +12,9 @@ import fetch from 'isomorphic-fetch';
 
 class Weather extends React.Component {
   state = {
-    weather: '',
+    weather: {
+      summary: null
+    },
   };
 
   componentDidMount() {
@@ -29,36 +35,56 @@ class Weather extends React.Component {
 }
 ```
 
-This is quite tricky to test. This is because `componentDidMount` does some asynchronous work, what means that `componentDidMount` will terminate before the network response reaches the component and we don't have any guarantee when or even if the `setState` function will get invoked. In our unit test, if we look too early into the state the data might not be there yet and our test will fail.
+The component above is actually quite tricky to test. This is because `componentDidMount` does some asynchronous work, what means that the execution of `componentDidMount` will terminate before the network response reaches the component and we don't have any guarantee when or even if the `setState` function will get invoked.
 
 ## The test case
 
-What we would like to test here is quite simple. When mounted, the component needs to shoot an HTTP request to the weather API and when provided a certain response it should set it into its state.
+First let's define what we are testing: We have a component that when mounted, will shoot an HTTP request to our imaginary weather API and then set the weather conditions received into its state.
 
-Since we're not supposed to use a real network connection in a unit-test scenario we will mock the HTTP request so we will have absolute control on the response. This will allow us to assert that the component will display the right thing according to the weather returned from our unit test.
+Since we're not supposed to use a real network connection in a unit-test scenario we will mock the HTTP request so we will have absolute control on the response. This will allow us to assert that the component behaves the way we expect and set the right thing into its state. We could also test for what the component actually renders. I feel that unnecessary because it's too trivial. If we assert on the state that should be enough. Besides, if we ever decide to change the message just a tiny bit our test will fail. The way the state is handled however, is not prone to change so much and therefore I find it a better candidate for testing.
 
 ## The solution we need
 
-There are some conditions that need to be fulfilled in order to this to be a real unit test:
+In our unit test, if we check the state too early the data might not be there yet and our test will fail. On the other hand if we just wait for a fixed amount of time that would be enough to be certain that the mock response has returned, we are wasting precious time and making out unit tests slow. Both scenarios are unacceptable since unit-tests must be reliable _and_ fast.
 
-1. It must be quick and robust. Using `setTimeout` is not going to provide for both these conditions. Either we will wait too long for the response, which would make our test slow, or we don't wait enough which will make our test fail sometimes.
-2. We don't mock the unit under test. I read people suggesting to mock the internal functions of the component under test and then assert that these functions were called. But the way I see it, if you change anything in the unit that you are testing, this is no longer a valid unit test. The idea here is to test that the component works as we expect, and not to test the implementation details.
+There are some thumb rules that hold for all unit tests:
+
+1. Test results must be deterministic and not affected by the environment. This means that if a unit test is failing, repeating the test must not change the results. If a unit-test is flaky then it's probably doing something it shouldn't like a network request for example. A unit-test that fails _sometimes_ is something we can't accept.
+
+
+2. It must be quick and robust. Using a fixed time to wait for something is not going to provide for both these conditions. Either we will wait too long for the response, which would make our test slow, or we don't wait enough which will make our test flaky.
+
+3. We don't mock the unit under test. I read people suggesting to mock the internal functions of the component under test and then assert that these functions were called. But the way I see it, if you change anything in the component that you are testing, you are no longer testing your unit but your _modification_ of that unit. The idea here is to test that a unit works as we expect over a clear API and not to assert on its internals.
 
 ## The tools we'll be using to achieve this
 
 ### nock - HTTP server mocking and expectations library for Node.js
 
-[nock](https://www.npmjs.com/package/nock) is a solid library under active maintenance for manipulating and HTTP responses and asserting on requests. In our case, this serves a double purpose:
+[nock](https://www.npmjs.com/package/nock) is a solid library under active maintenance for manipulating and asserting on HTTP responses and requests. In our case, nock serves a double purpose:
 
 #### The component needs to think that the network connection is working.
-Remember we're in a unit-test scenario that means that the unit tests shuld pass even if we have no network connection. That's why they're called unit tests, because we're testing our unit, which in this case is the React component. We are not testing that our internet connection works properly. That's not in our concern for now. nock helps us to hijack the request to the weather API and prevent it from going
+Remember we're in a unit-test scenario that means that tests must pass even if we have no network connection. That's why they're called unit tests, because we're testing just our unit and nothing else but our unit. We are not testing that our internet connection works properly, that's not in our concern for now. nock helps us to hijack the request to the weather API and prevent it from going out to the
 
 #### We want to control the response 
-When writing a test we must ensure a deterministic behavior. Even though some places do have mostly bad weather, we can't allow one sunny day to break all our unit tests. With nock, or any other HTTP mocking library, we can set the response that will be received by our component under test. Yes, we can even make London sunny all year long!
+When writing a test we must ensure a deterministic and repeatable behavior. We cannot allow any external conditions like the size of CPU nor a change in the weather to break our tests. With nock, or any other HTTP mocking library, we can inject the response that will be received by our component under test. Yes, we can make London sunny all year long!
+
+### async-wait-until
+
+The second tool we'll be using is this small library called [async-wait-until](https://github.com/devlato/waitUntil). This modern library is based on Promises and has TypeScript support, two things that we love in the modern JavaScript eco-system. In the simplest use-case we provide `waitUntil` with a conditions that it will keep on checking until it's true. Once the condition is true the promise will resolve. 
+
+For example to make sure you have enough coding energy to get through the day, some of us would might like to have code running somewhere:
+
+```
+waitFor(
+  () => new Date().getHours() === 16
+).then(makeCoffee)
+```
+
+Our small program above will keep looking at the clock continuously until it's 4pm and then make us some coffee. Afterwards the program will terminate and we will have to restart it the next day.
 
 ## The test
 
-Here's what the test would look like.
+Getting back to our weather component and using nock and async-wait-until, here's what our test looks like:
 
 ```jsx
 import waitUntil from 'async-wait-until';
@@ -67,27 +93,31 @@ import nock from 'nock';
 import React from 'react';
 import Weather from '../Weather';
 
-const mockWeather = {
-  summary: 'sunny',
-};
-
 describe('<Weather />', () => {
   beforeAll(() => {
+    // Prepare nock to respond to a request
+    // to the weather API.
+    // In this case our test will always think that london
+    // is sunny.
     nock('https://weather.example.com/api')
       .get('/weather?q=london')
-      .reply(200, mockWeather);
+      .reply(200, {
+           summary: 'sunny',
+      });
   });
 
   it('Component fetching weather from API', async (done) => {
     const root = shallow(<Weather location="london" />);
 
     let componentsWeather = {};
-    await waitUntil(() => {
-      componentsWeather = root.state('weather');
-      return componentsWeather.summary !== undefined;
-    });
+    
+    // We wait until the state has a weather summary, but we
+    // don't check yet about the content.
+    await waitUntil(() => root.state('weather').summary !== null);
 
-    expect(componentsWeather.summary).toEqual(mockWeather.summary);
+    // It is better to have the expectation here and not inside
+    // the waitUntil condition
+    expect(componentsWeather.summary).toEqual('sunny');
 
     done();
   });
@@ -95,4 +125,4 @@ describe('<Weather />', () => {
 
 ```
 
-As we see in the test above we have absolute control about what our endpoint returns. It is important that in your unit tests you will use a domain that doesn't exist in reality. In this case you can be certain that the unit tests isn't getting any data from the real internet. You can achieve this via configuration of your application.
+As we see in the test above we have absolute control about what our endpoint returns. It is important that in your unit tests you will use a domain that doesn't exist in reality. This way you can be certain that the unit tests isn't getting any data from the internet. You can achieve this via configuration of your application.
