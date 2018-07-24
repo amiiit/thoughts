@@ -128,3 +128,7 @@ describe('<Weather />', () => {
 ```
 
 As you can see in the test above we have absolute control about what our endpoint returns. It is important that your unit tests will use a domain that doesn't exist in reality. This way you can be certain that the unit tests aren't getting any data from the internet. You can achieve this via configuration of your application.
+
+## Conclusion
+
+After reading this bit and understanding the code examples above you should be able to unit test your React components even if they are doing things asynchronously, like network requests. Writing tests isn't easy but it's worth practicing as it helps you to write better code and to become a better developer.
