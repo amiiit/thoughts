@@ -1,8 +1,8 @@
 # Unit-Testing asynchronous data fetching on a React component
 
-The following article is a direct result of the code review process that we run internally in our team. I was implementing a new feature, in which I decided to fetch data directly from the component and not to go over the redux actions and store. I guess we can have a really long discussion just about whether we should be fetching data directly from the component or over redux. But in my case, I decided to keep it simple and just fetch the data I need where I need it.
+The following article is a direct result of the code review process that we run internally in our team. I was implementing a new feature, in which I decided to fetch data directly from the component and not to go all the way through the redux actions and store. I guess we can have a really long discussion just about whether we should be fetching data directly from the component or not. But in my case, I decided to keep it simple and just fetch the data I need where I need it.
 
-On the pull request, I got the feedback that if I used an Action it would be easier to test. Hmm... This read to me like a challenge, so I decided to test this scenario as is so that I'm able to write more of these tests in the future.
+On the pull request, I got the feedback that if I used an Action it would be easier to test. Hmm... This read to me like a challenge, so I decided to test this scenario as it was so that I'm able to write more of these tests in the future.
 
 Regardless to what we might be using for state management (or not), the following is quite a typical scenario in a React component: We mount a component with a property that serves as an id. Then in `componentDidMount` we use that prop in order to fetch some data and set the component's state accordingly.
 
@@ -57,11 +57,11 @@ There are some thumb rules that hold for all unit tests:
 
 ## The tools we'll be using to achieve this
 
-In this example, I'll be using two additional tools relevant to the task at hand. There are probably other npm modules out there that do the same, perhaps even better. More than the tools themselves it is important that you develop the understanding of what are we trying to achieve by using these tools.
+We have two challenges that we need to solve in order to write a good unit test. One is mocking network requests and manipulating their responses and the other challenge is to solve the waiting issue. In the npm world there are multiple libraries that solve the same problem and it's a tricky task to choose the right one. Everyone may have different reasons to choose a certain library. One good reason may be that it's already part of your project and it does the job. Then you might also want to look into the source code of that particular tool in order to evaluate its quality and perhaps learn a few new things on the way. Here are my tools of choice that work for this kind of tests. You might choose to use other tools but the principle stays the same.
 
 ### nock - HTTP server mocking and expectations library for Node.js
 
-[nock](https://www.npmjs.com/package/nock) is a solid library under active maintenance for manipulating and asserting on HTTP responses and requests. In our case, nock serves a double purpose:
+[nock](https://www.npmjs.com/package/nock) is a solid library under active maintenance for manipulating and asserting on HTTP responses and requests. It has been part of our project for a very long time and served all our mocking needs for networking in unit-tests. In this case, nock serves a double purpose:
 
 #### The component needs to think that the network connection is working.
 Remember we're in a unit-test scenario that means that the execution of the tests is not allowed to generate any actual network activity. That's why they're called unit tests because we're testing just our unit and nothing else but our unit. We are not testing that our internet connection works properly. That's not in our concern for now. nock helps us to hijack the request to the weather API and prevent it from going out to the internet.
@@ -73,7 +73,7 @@ When writing a test we must ensure a deterministic and repeatable behavior. We c
 
 The second tool we'll be using is this small library called [async-wait-until](https://github.com/devlato/waitUntil). This modern library is based on Promises and has TypeScript support, two things that we love! In the simplest use-case, we provide `waitUntil` with a predicate. waitUntil will keep executing the predicate until it's true. Once the predicate function returns true the promise will resolve.
 
-For example, the following simple lines will keep looking at the watch until it's 4 pm and make us coffee.
+For example, the following simple lines will keep looking at the time until it's 4 pm and make us some coffee.
 
 ```
 waitFor(
