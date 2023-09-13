@@ -1,8 +1,6 @@
 # How to write better feature requests with functional requirements
 You think a feature is missing which is essential for the business to run correctly? Or do you have an idea for a feature that would improve the way we work? Great! You may feel that the natural next step is to ask a developer to build this for you. However, you probably shouldn't do this just yet. There are probably some things you need to figure out before that, so that you can better inform the developer, enabling her to produce a higher quality result in less time.
 
-<img width="144" alt="image" src="https://github.com/amiiit/thoughts/assets/2736813/65f644e8-976d-4624-a2d2-d33c765fa051">
-
 ## What are functional requirements
 As the name suggest, functional requirements describe *how* something should work.
 
